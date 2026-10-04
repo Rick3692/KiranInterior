@@ -92,11 +92,12 @@
   @media (max-width:860px){.calc-layout{grid-template-columns:1fr;}}
   .panel{background:var(--card); border:1px solid var(--line); padding:26px;}
   label{display:block; font-size:.8rem; color:#5b5142; margin:14px 0 6px; font-weight:500;}
-  select,input{
+  select,input,textarea{
     width:100%; padding:10px 12px; font-size:.95rem; font-family:inherit;
     border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:var(--radius);
   }
-  select:focus,input:focus{border-color:var(--walnut);}
+  select:focus,input:focus,textarea:focus{border-color:var(--walnut);}
+  textarea{resize:vertical; min-height:110px; line-height:1.5;}
   .dims{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
   button.primary{
     margin-top:22px; background:var(--walnut); color:#fff; border:none;

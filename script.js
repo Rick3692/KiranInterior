@@ -13,14 +13,9 @@
   };
 
   const SPECIAL_INSTRUCTIONS = [
-    'GURJAN PLY OR HDHMR',
     'Outer Finishing — 1.0 mm — Virgo (High Glossy Laminate or Mat Laminate)',
     'Inner Finishing — 0.8 mm (Fabric / Half White Laminate)',
-    'Hardware: Ping / Moda — German Technologies',
     'Ceiling: Gypsum Sheet, Ultra Channel (0.4 bottom, 0.5 patti)',
-    'Electrical — Wire: Anchor / Imported',
-    'Lights: Crompton',
-    'Paint: Asian Paint Tractor Emulsion — White colour for Ceiling',
     'Profile light 1 meter is 1 point',
     'Roof light 3 meters is 1 point',
     '1 spot light is 1 point'
@@ -96,6 +91,18 @@
 
   function saveEstimate() {
     localStorage.setItem('ki_estimate', JSON.stringify(currentEstimate));
+  }
+
+  // ---- Material list helpers ----
+  function getMasterMaterials() {
+    return localStorage.getItem('ki_materials_master') || '';
+  }
+  function getCurrentMaterials() {
+    const el = document.getElementById('materialInput');
+    return el ? el.value : (localStorage.getItem('ki_materials_current') || '');
+  }
+  function materialLines(text) {
+    return (text || '').split('\n').map(l => l.trim()).filter(Boolean);
   }
 
   function saveHistory() {
@@ -206,6 +213,7 @@
           custName,
           custPhone,
           discountPct,
+          materials: getCurrentMaterials(),
           items: [...currentEstimate],
           grandTotal,
           timestamp: new Date().toLocaleString()
@@ -217,6 +225,7 @@
         custName,
         custPhone,
         discountPct,
+        materials: getCurrentMaterials(),
         items: [...currentEstimate],
         grandTotal,
         timestamp: new Date().toLocaleString()
@@ -625,6 +634,36 @@
     let ty = 36;
     const bodyWidth = 182;
 
+    // Start a new page if the next block will not fit
+    const ensure = (need) => {
+      if (ty + need > 278) {
+        doc.addPage();
+        ty = 20;
+      }
+    };
+
+    // ---- Material list (above Terms & Conditions) ----
+    const pdfMaterials = materialLines(getCurrentMaterials());
+    if (pdfMaterials.length) {
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(80, 50, 20);
+      doc.text('Material List', 14, ty);
+      ty += 8;
+
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(30);
+      pdfMaterials.forEach(m => {
+        const wrapped = doc.splitTextToSize(`• ${m}`, bodyWidth - 4);
+        ensure(wrapped.length * 5 + 2);
+        doc.text(wrapped, 16, ty);
+        ty += wrapped.length * 5 + 1.5;
+      });
+      ty += 6;
+    }
+
+    ensure(30);
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(12);
     doc.setTextColor(80, 50, 20);
@@ -635,6 +674,7 @@
     doc.setFontSize(9.5);
     doc.setTextColor(30);
     SPECIAL_INSTRUCTIONS.forEach(line => {
+      ensure(8);
       doc.text(`• ${line}`, 16, ty);
       ty += 6;
     });
@@ -642,10 +682,12 @@
 
     EXTRA_NOTES.forEach(note => {
       const wrapped = doc.splitTextToSize(note, bodyWidth);
+      ensure(wrapped.length * 5 + 4);
       doc.text(wrapped, 14, ty);
       ty += wrapped.length * 5 + 4;
     });
 
+    ensure(30);
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(12);
     doc.setTextColor(80, 50, 20);
@@ -657,11 +699,13 @@
     doc.setTextColor(30);
     TERMS_LIST.forEach((t, i) => {
       const wrapped = doc.splitTextToSize(`${i + 1}. ${t}`, bodyWidth);
+      ensure(wrapped.length * 5 + 3);
       doc.text(wrapped, 14, ty);
       ty += wrapped.length * 5 + 3;
     });
     ty += 2;
 
+    ensure(30);
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(12);
     doc.setTextColor(80, 50, 20);
@@ -672,11 +716,13 @@
     doc.setFontSize(9.5);
     doc.setTextColor(30);
     PAYMENT_TERMS.forEach((t, i) => {
+      ensure(8);
       doc.text(`${i + 1}. ${t}`, 16, ty);
       ty += 6;
     });
     ty += 6;
 
+    ensure(30);
     doc.setDrawColor(200);
     doc.line(14, ty, 196, ty);
     ty += 8;
@@ -830,6 +876,11 @@
         if (custNameInput) custNameInput.value = '';
         if (custPhoneInput) custPhoneInput.value = '';
         if (discountInput) discountInput.value = '0';
+        const matBox = document.getElementById('materialInput');
+        if (matBox) {
+          matBox.value = getMasterMaterials();
+          localStorage.setItem('ki_materials_current', matBox.value);
+        }
         saveEstimate();
         updateEditingBanner();
         renderEstimateTable();
@@ -843,6 +894,37 @@
 
     if (downloadPdfBtn) {
       downloadPdfBtn.addEventListener('click', generatePDF);
+    }
+  }
+
+  // Material list: estimate-page box + admin default list
+  function initMaterials() {
+    const matBox = document.getElementById('materialInput');
+    const master = document.getElementById('masterMaterials');
+    const saveBtn = document.getElementById('saveMaterialsBtn');
+
+    if (matBox) {
+      const saved = localStorage.getItem('ki_materials_current');
+      matBox.value = (saved !== null) ? saved : getMasterMaterials();
+      matBox.addEventListener('input', () => {
+        localStorage.setItem('ki_materials_current', matBox.value);
+        recordCurrentEstimateInHistory();
+      });
+    }
+
+    if (master) master.value = getMasterMaterials();
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        const oldMaster = getMasterMaterials();
+        localStorage.setItem('ki_materials_master', master.value);
+        // Refresh the estimate-page box unless the person already customised it
+        if (matBox && !activeEditingEstimateId && (matBox.value === oldMaster || matBox.value === '')) {
+          matBox.value = master.value;
+          localStorage.setItem('ki_materials_current', matBox.value);
+        }
+        showToast('Material list saved');
+      });
     }
   }
 
@@ -1091,6 +1173,11 @@
           if (custNameInput) custNameInput.value = est.custName || '';
           if (custPhoneInput) custPhoneInput.value = est.custPhone || '';
           if (discountInput) discountInput.value = est.discountPct || 0;
+          const matBox = document.getElementById('materialInput');
+          if (matBox) {
+            matBox.value = (est.materials !== undefined) ? est.materials : getMasterMaterials();
+            localStorage.setItem('ki_materials_current', matBox.value);
+          }
 
           saveEstimate();
           renderEstimateTable();
@@ -1110,8 +1197,8 @@
         const est = estimateHistory.find(item => item.id === id);
         if (!est) return;
 
-        // Pass the selected saved estimate to the invoice page.
-        localStorage.setItem('ki_invoice_estimate', JSON.stringify(est));
+        // Pass the selected saved estimate (with its material list) to the invoice page.
+        localStorage.setItem('ki_invoice_estimate', JSON.stringify({ ...est, materials: (est.materials !== undefined ? est.materials : getMasterMaterials()) }));
         window.open('invoice.html', '_blank');
       });
     });
@@ -1121,7 +1208,7 @@
         const id = e.target.getAttribute('data-id');
         const est = estimateHistory.find(item => item.id === id);
         if (!est) return;
-        localStorage.setItem('ki_invoice_estimate', JSON.stringify(est));
+        localStorage.setItem('ki_invoice_estimate', JSON.stringify({ ...est, materials: (est.materials !== undefined ? est.materials : getMasterMaterials()) }));
         window.open('agreement.html', '_blank');
       });
     });
@@ -1146,6 +1233,7 @@
   // Document Ready Initialization
   document.addEventListener('DOMContentLoaded', () => {
     loadLogo();
+    initMaterials();
     initNavigation();
     populateRoomDropdowns();
     setDefaultDimensions();

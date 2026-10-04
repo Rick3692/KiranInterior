@@ -93,6 +93,11 @@
         <input type="text" id="custName" placeholder="Customer name">
         <label for="custPhone">Phone</label>
         <input type="text" id="custPhone" placeholder="10-digit mobile number">
+
+        <h2 style="margin-top:36px">Material</h2>
+        <label for="materialInput">Material list (one per line)</label>
+        <textarea id="materialInput" rows="6" placeholder="e.g.&#10;Plywood: 19mm BWP Grade&#10;Laminate: 1mm Merino&#10;Hardware: Hettich soft-close"></textarea>
+        <p class="note">Printed above Terms &amp; Conditions in the PDF. The default list is set in Admin.</p>
       </div>
 
       <div class="panel">
@@ -169,6 +174,15 @@
           <label>Existing Rooms</label>
           <div id="roomListContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;"></div>
         </div>
+      </div>
+
+      <!-- Material List Manager -->
+      <div class="panel" style="margin-top:26px">
+        <h2>Material List (default)</h2>
+        <p class="note" style="margin-top:0">One material per line. This fills the Material box on every new estimate and is printed in the Estimate, Invoice and Agreement PDFs.</p>
+        <label for="masterMaterials">Default materials</label>
+        <textarea id="masterMaterials" rows="8" placeholder="e.g.&#10;Plywood: 19mm BWP Grade&#10;Laminate: 1mm Merino&#10;Hardware: Hettich soft-close"></textarea>
+        <button class="primary" id="saveMaterialsBtn">Save Material List</button>
       </div>
 
       <!-- Item Catalog Manager -->
