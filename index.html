@@ -3,102 +3,215 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RoomCraft 3D — Interior Designer</title>
+<title>Kiran Interior — Custom Furniture &amp; Estimates</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
-<div class="app-shell">
-
-  <header class="topbar">
+<header>
+  <div class="header-inner">
     <div class="brand">
-      <span class="mark">RoomCraft<span>3D</span></span>
+      <span class="mark">Kiran Interior</span>
+      <span class="tag">custom furniture &amp; interiors</span>
     </div>
-    <div class="actions">
-      <button id="save-design-btn">Save design</button>
-      <button id="load-design-btn">Load design</button>
-      <button id="reset-room-btn">Reset room</button>
-      <button id="download-img-btn">Download image</button>
-      <a href="admin.html">Admin ↗</a>
-    </div>
-  </header>
-
-  <div class="main-grid">
-
-    <!-- LEFT: catalog -->
-    <aside class="catalog-panel">
-      <div class="cat-tabs" id="cat-tabs"></div>
-      <div class="catalog-list" id="catalog-list"></div>
-    </aside>
-
-    <!-- CENTER: 3D viewport -->
-    <section class="viewport" id="viewport">
-      <canvas id="three-canvas"></canvas>
-      <div class="viewport-hint">Drag empty space to orbit · scroll to zoom · click an item then drag to move it</div>
-    </section>
-
-    <!-- RIGHT: room + properties -->
-    <aside class="props-panel">
-      <h3>Room dimensions (feet)</h3>
-      <div class="field-row">
-        <div class="field"><label>Width</label><input type="number" id="room-width" value="12" min="4" max="60" step="0.5"></div>
-        <div class="field"><label>Breadth</label><input type="number" id="room-depth" value="10" min="4" max="60" step="0.5"></div>
-      </div>
-      <div class="field"><label>Height</label><input type="number" id="room-height" value="9" min="6" max="20" step="0.5"></div>
-      <button class="btn brass block" id="build-room-btn">Build / resize room</button>
-
-      <hr class="sep">
-
-      <h3>Selected item</h3>
-      <div id="no-selection" class="empty-note">Click an item in the room to edit it, or add one from the left panel.</div>
-      <div id="selection-panel" class="selected-card" style="display:none;">
-        <div class="name" id="sel-name"></div>
-
-        <div class="field-row">
-          <div class="field"><label>Width (ft)</label><input type="number" id="sel-w" step="0.1" min="0.2"></div>
-          <div class="field"><label>Depth (ft)</label><input type="number" id="sel-d" step="0.1" min="0.2"></div>
-        </div>
-        <div class="field"><label>Height (ft)</label><input type="number" id="sel-h" step="0.1" min="0.2"></div>
-
-        <div class="field">
-          <label>Height off floor (ft)</label>
-          <input type="number" id="sel-elev" step="0.1" min="0">
-          <div style="display:flex;gap:8px;margin-top:6px;">
-            <button class="btn small outline" id="sit-floor">Sit on floor</button>
-            <button class="btn small outline" id="hang-wall">Hang on wall</button>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Colour</label>
-          <div class="color-swatches" id="sel-colors"></div>
-        </div>
-
-        <div class="field">
-          <label>Rotate</label>
-          <div style="display:flex;gap:8px;">
-            <button class="btn small outline" id="rotate-left">⟲ 15°</button>
-            <button class="btn small outline" id="rotate-right">15° ⟳</button>
-          </div>
-        </div>
-
-        <button class="btn danger block" id="remove-item-btn" style="margin-top:6px;">Remove from room</button>
-      </div>
-
-      <hr class="sep">
-
-      <h3>Items in room</h3>
-      <div id="room-items-list"></div>
-    </aside>
-
+    <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+    <nav id="mainNav">
+      <button data-page="gallery" class="active">Designs</button>
+      <button data-page="quote">Get an Estimate</button>
+      <button data-page="admin">Admin</button>
+      
+    </nav>
   </div>
-</div>
+</header>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/catalog.js"></script>
-<script src="js/scene3d.js"></script>
-<script src="js/main.js"></script>
+<main>
+
+  <!-- ===================== GALLERY PAGE ===================== -->
+  <section id="page-gallery" class="page active">
+    <div class="eyebrow">Look book</div>
+    <h1>Designs, and what they cost</h1>
+    <p class="lede">Every design below shows a starting rate per square foot. Find something you like, then move to <strong>Get an Estimate</strong> to price it against your own room's measurements.</p>
+    <div id="galleryGrid" class="grid"></div>
+  </section>
+
+  <!-- ===================== QUOTE / CALCULATOR PAGE ===================== -->
+  <section id="page-quote" class="page">
+    <div class="eyebrow">Your project</div>
+    <h1>Build your estimate</h1>
+    <p class="lede">Choose a room and an item, enter measurements in feet, and add them to the list below. Download a PDF to keep or share with us.</p>
+
+    <div id="editingBanner" class="editing-banner" style="display:none">
+      <span id="editingBannerText">—</span>
+      <button class="ghost" id="startNewBtn">Start new estimate</button>
+    </div>
+
+    <div class="calc-layout">
+      <div class="panel">
+        <h2>Add an item</h2>
+        
+        <!-- Dropdown for Room / Area -->
+        <label for="roomSelect">Room / Area</label>
+        <select id="roomSelect"></select>
+
+        <!-- Dropdown for Items (Filtered by Room) -->
+        <label for="itemSelect">Item</label>
+        <select id="itemSelect"></select>
+
+        <label>Dimensions (feet)</label>
+        <div class="dims">
+          <div>
+            <label style="margin-top:0">Height</label>
+            <input type="number" id="dimH" min="0" step="0.1" value="7" placeholder="7">
+          </div>
+          <div>
+            <label style="margin-top:0">Width</label>
+            <input type="number" id="dimW" min="0" step="0.1" value="2" placeholder="2">
+          </div>
+          <div>
+            <label style="margin-top:0">Depth</label>
+            <input type="number" id="dimD" min="0" step="0.1" value="2" placeholder="2">
+          </div>
+        </div>
+        <p class="note">Cost is based on visible face area (Height × Width). Depth is recorded for the carpenter cutting list.</p>
+
+        <button class="primary" id="addItemBtn">Add to estimate</button>
+
+        <h2 style="margin-top:36px">Other item</h2>
+        <p class="note" style="margin-top:0">Not in the list? Type the item name and a fixed amount. It is added under the Room / Area selected above.</p>
+        <label for="otherName">Name of item</label>
+        <input type="text" id="otherName" placeholder="e.g. Extra shelf, False ceiling patch">
+        <label for="otherAmount">Amount (₹)</label>
+        <input type="number" id="otherAmount" min="0" step="1" placeholder="e.g. 5000">
+        <button class="primary" id="addOtherBtn">Add other item</button>
+
+        <h2 style="margin-top:36px">Your details</h2>
+        <label for="custName">Name</label>
+        <input type="text" id="custName" placeholder="Customer name">
+        <label for="custPhone">Phone</label>
+        <input type="text" id="custPhone" placeholder="10-digit mobile number">
+      </div>
+
+      <div class="panel">
+        <h2>Your estimate</h2>
+        <table id="estimateTable">
+          <thead>
+            <tr><th>Item</th><th>H×W×D (ft)</th><th>Sq.ft</th><th>Rate</th><th>Amount</th><th></th></tr>
+          </thead>
+          <tbody id="estimateBody">
+            <tr><td colspan="6" class="empty">No items added yet.</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="4"></td><td class="subtotal-label">Subtotal</td><td id="subtotalCell">₹0</td></tr>
+            <tr><td colspan="4"></td><td class="subtotal-label">Discount</td><td id="discountCell">− ₹0</td></tr>
+            <tr class="grand-row"><td colspan="4"></td><td>Total</td><td id="grandTotal">₹0</td></tr>
+          </tfoot>
+        </table>
+
+        <div class="discount-row">
+          <label for="discountInput" style="margin:0">Discount</label>
+          <div class="discount-controls">
+            <input type="number" id="discountInput" min="0" max="100" step="1" value="0" placeholder="0">
+            <span class="pct-sign">%</span>
+            <div class="discount-chips">
+              <button type="button" class="chip" data-pct="0">0%</button>
+              <button type="button" class="chip" data-pct="5">5%</button>
+              <button type="button" class="chip" data-pct="10">10%</button>
+              <button type="button" class="chip" data-pct="15">15%</button>
+              <button type="button" class="chip" data-pct="20">20%</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row-actions">
+          <button class="ghost" id="clearBtn">Clear all</button>
+          <div style="display:flex; gap:10px;">
+            <button class="whatsapp" id="whatsappBtn">
+              <svg viewBox="0 0 32 32" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16.04 3C9.4 3 4 8.4 4 15.04c0 2.24.62 4.36 1.7 6.18L4 29l7.94-1.66a12.03 12.03 0 0 0 4.1.72h.01c6.64 0 12.04-5.4 12.04-12.04C28.09 8.4 22.68 3 16.04 3zm0 21.9h-.01a10 10 0 0 1-3.98-.84l-.29-.13-4.66.97 1-4.51-.19-.3a9.86 9.86 0 0 1-1.5-5.28c0-5.5 4.48-9.98 10.03-9.98 2.68 0 5.2 1.04 7.1 2.94a9.9 9.9 0 0 1 2.94 7.07c0 5.5-4.53 10.06-10.44 10.06zm5.5-7.53c-.3-.15-1.78-.88-2.06-.98-.28-.1-.48-.15-.68.15-.2.3-.78.98-.96 1.18-.18.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.79-1.68-2.09-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.53.15-.18.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.68-1.65-.94-2.26-.25-.6-.5-.51-.68-.52h-.58c-.2 0-.53.07-.8.38-.28.3-1.05 1.03-1.05 2.5s1.08 2.9 1.23 3.1c.15.2 2.12 3.24 5.14 4.54.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.78-.73 2.03-1.43.25-.7.25-1.3.18-1.43-.07-.13-.27-.2-.57-.35z"/></svg>
+              Share on WhatsApp
+            </button>
+            <button class="primary" id="downloadPdfBtn" style="margin-top:0">Download PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ADMIN / MASTER PAGE ===================== -->
+  <section id="page-admin" class="page">
+    <div id="adminGate" class="gate">
+      <div class="eyebrow" style="text-align:center">Staff only</div>
+      <h2>Admin sign-in</h2>
+      <label for="adminPass">Password</label>
+      <input type="password" id="adminPass" placeholder="Enter admin password">
+      <button class="primary" id="adminLoginBtn" style="width:100%">Sign in</button>
+      <p class="hint">Default password: kiran123</p>
+    </div>
+
+    <div id="adminPanel" style="display:none">
+      <div class="eyebrow">Master Page Manager</div>
+      <h1>Manage Rooms &amp; Items</h1>
+
+      <!-- Room Category Manager -->
+      <div class="panel">
+        <h2>Manage Rooms / Areas</h2>
+        <div style="display:flex; gap:10px; align-items:flex-end;">
+          <div style="flex:1">
+            <label for="newRoomName">Add New Room / Area</label>
+            <input type="text" id="newRoomName" placeholder="e.g. Master BedRoom, Balcony">
+          </div>
+          <button class="primary" id="addRoomBtn" style="margin-top:0">Add Room</button>
+        </div>
+        <div style="margin-top:15px">
+          <label>Existing Rooms</label>
+          <div id="roomListContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;"></div>
+        </div>
+      </div>
+
+      <!-- Item Catalog Manager -->
+      <div class="panel" style="margin-top:26px">
+        <h2>Add / Modify Items</h2>
+        <div class="admin-form">
+          <div>
+            <label for="newName">Item name</label>
+            <input type="text" id="newName" placeholder="e.g. Master Wardrobe, King Size Bed">
+          </div>
+          <div>
+            <label for="newCategory">Room / Area Category</label>
+            <select id="newCategory"></select>
+          </div>
+          <div>
+            <label for="newRate">Rate per sq.ft (₹)</label>
+            <input type="number" id="newRate" min="0" placeholder="1450">
+          </div>
+          <div>
+            <label for="newImage">Design picture</label>
+            <input type="file" id="newImage" accept="image/*">
+            <img id="newImagePreview" class="preview">
+          </div>
+        </div>
+        <button class="primary" id="addCatalogBtn">Save Item</button>
+      </div>
+
+      <div class="panel" style="margin-top:26px">
+        <h2>Existing Catalog Items</h2>
+        <div id="adminList"></div>
+      </div>
+
+      <div class="panel" style="margin-top:26px">
+        <h2>Recent Estimates</h2>
+        <div id="estimateHistoryList"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="script.js"></script>
 </body>
 </html>

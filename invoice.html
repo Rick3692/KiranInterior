@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kiran Interior — Invoice</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{--brown:#5d3a20;--gold:#e0c49a;--ink:#222;--muted:#666;--bg:#f5f2ee}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
+  .toolbar{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid #ddd;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .toolbar strong{color:var(--brown)}
+  button{border:0;border-radius:6px;padding:10px 16px;cursor:pointer;font-weight:700}
+  .pdf-btn{background:var(--brown);color:#fff}.back-btn{background:#eee;color:#333}
+  .invoice{width:210mm;min-height:297mm;margin:22px auto;background:#fff;padding:14mm;box-shadow:0 3px 18px rgba(0,0,0,.12)}
+  .header{height:30mm;background:var(--brown);color:#fff;display:flex;align-items:center;padding:5mm 7mm;gap:8mm}
+  .logo{width:22mm;height:22mm;object-fit:contain;background:#fff;border-radius:3mm;padding:1mm}
+  .brand h1{margin:0;font-size:22px}.brand p{margin:4px 0 0;font-size:12px;opacity:.9}
+  .invoice-title{display:flex;justify-content:space-between;align-items:flex-start;margin:9mm 0 6mm}
+  .invoice-title h2{margin:0;color:var(--brown);font-size:25px;letter-spacing:1px}.meta{text-align:right;font-size:12px;line-height:1.7}
+  .customer{border:1px solid #ddd;border-radius:4px;padding:5mm;margin-bottom:7mm}.customer-grid{display:grid;grid-template-columns:1fr 1fr;gap:3mm 10mm}.label{font-size:10px;color:var(--muted);text-transform:uppercase}.value{font-size:13px;font-weight:600;margin-top:1mm}
+  table{width:100%;border-collapse:collapse;font-size:11px}th{background:var(--gold);color:var(--brown);text-align:left;padding:3mm}td{padding:3mm;border-bottom:1px solid #e3e3e3;vertical-align:top}th:not(:first-child),td:not(:first-child){text-align:right}
+  .room-row td{background:#f4eee6;color:var(--brown);font-weight:700;text-align:left!important}.totals{margin:8mm 0 0 auto;width:70mm}.total-row{display:flex;justify-content:space-between;padding:2mm 0;font-size:12px}.grand{border-top:2px solid var(--brown);margin-top:2mm;padding-top:4mm;font-size:16px;font-weight:700;color:var(--brown)}
+  .payment-box{margin-top:10mm;border:1px solid #ddd;border-radius:4px;padding:5mm}.payment-box h3{margin:0 0 4mm;color:var(--brown);font-size:14px}.payment-table{width:100%;border-collapse:collapse;font-size:11px}.payment-table th,.payment-table td{padding:3mm;border:1px solid #ddd;text-align:left}.payment-table th{background:#f4eee6}.payment-table td:last-child,.payment-table th:last-child{text-align:right}.footer{margin-top:12mm;border-top:1px solid #ddd;padding-top:5mm;font-size:10px;color:var(--muted);display:flex;justify-content:space-between;gap:10mm}.error{padding:25px;text-align:center;color:#a00}
+  @media print{.toolbar{display:none}.invoice{margin:0;box-shadow:none}.invoice{width:210mm;min-height:297mm}}
+  @media(max-width:800px){.invoice{width:100%;margin:0;min-height:100vh;padding:20px}.customer-grid{grid-template-columns:1fr}.header{height:auto}.totals{width:100%}}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <strong>Kiran Interior — Invoice Generation</strong>
+  <div>
+    <button class="back-btn" onclick="window.close();">Close</button>
+    <button class="pdf-btn" id="downloadInvoiceBtn">Generate Invoice PDF</button>
+  </div>
+</div>
+
+<div id="invoiceRoot" class="invoice"></div>
+
+<script>
+(function(){
+  const COMPANY = {
+    name: 'Kiran Interior',
+    tagline: 'Custom Furniture & Interiors',
+    phone: '9966614471',
+    logo: 'IMG-20260912-WA0030.jpg'
+  };
+
+  const SPECIAL_INSTRUCTIONS = [
+    'GURJAN PLY OR HDHMR',
+    'Outer Finishing — 1.0 mm — Virgo (High Glossy Laminate or Mat Laminate)',
+    'Inner Finishing — 0.8 mm (Fabric / Half White Laminate)',
+    'Hardware: Ping / Moda — German Technologies',
+    'Ceiling: Gypsum Sheet, Ultra Channel (0.4 bottom, 0.5 patti)',
+    'Electrical — Wire: Anchor / Imported',
+    'Lights: Crompton',
+    'Paint: Asian Paint Tractor Emulsion — White colour for Ceiling'
+  ];
+
+  const TERMS_LIST = [
+    'Design Changes — After final approval, any modification in design, size, finish, or material will be chargeable and may increase the timeline.',
+    'Material Availability — If the selected material is unavailable, a similar alternative will be suggested with client approval.',
+    'Timeline — Project timeline depends on site readiness, electricity, civil readiness, material supply, approvals, and timely payments.',
+    'Delay Due to Client Side — If the site is not ready, payments are delayed, or changes are requested, the completion date will automatically extend.',
+    'Payment Delay — Delayed payments may pause work until dues are cleared.'
+  ];
+
+  const invoice = JSON.parse(localStorage.getItem('ki_invoice_estimate') || 'null');
+  const root = document.getElementById('invoiceRoot');
+
+  function esc(value){
+    return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function money(n){ return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+  function invoiceNumber(est){
+    // Stable number for the selected saved estimate.
+    const datePart = String(est.id || Date.now()).replace(/\D/g,'').slice(-10) || String(Date.now()).slice(-10);
+    return 'KI-INV-' + datePart;
+  }
+  function calculations(est){
+    let subtotal = 0;
+    const groups = {};
+    (est.items || []).forEach(item => {
+      const sqft = Number(item.h || 0) * Number(item.w || 0);
+      const amount = Math.round(sqft * Number(item.rate || 0));
+      subtotal += amount;
+      if(!groups[item.room]) groups[item.room] = [];
+      groups[item.room].push({...item, sqft, amount});
+    });
+    const discountPct = Number(est.discountPct || 0);
+    const discountAmt = Math.round(subtotal * discountPct / 100);
+    return {subtotal, discountPct, discountAmt, grandTotal: subtotal - discountAmt, groups};
+  }
+
+  function render(){
+    if(!invoice || !Array.isArray(invoice.items) || invoice.items.length === 0){
+      root.innerHTML = '<div class="error"><h2>Invoice cannot be generated</h2><p>No saved estimate was found.</p></div>';
+      document.getElementById('downloadInvoiceBtn').disabled = true;
+      return;
+    }
+    const c = calculations(invoice);
+    let rows = '';
+    Object.entries(c.groups).forEach(([room,items]) => {
+      rows += `<tr class="room-row"><td colspan="5">${esc(room)}</td></tr>`;
+      items.forEach(item => {
+        rows += `<tr>
+          <td>${esc(item.name)}</td>
+          <td>${esc(item.h)} × ${esc(item.w)} × ${esc(item.d || 0)}</td>
+          <td>${item.sqft.toFixed(1)}</td>
+          <td>${money(item.rate)}</td>
+          <td>${money(item.amount)}</td>
+        </tr>`;
+      });
+    });
+
+    root.innerHTML = `
+      <div class="header">
+        <img class="logo" src="${COMPANY.logo}" alt="Kiran Interior logo" onerror="this.style.display='none'">
+        <div class="brand"><h1>${COMPANY.name}</h1><p>${COMPANY.tagline}</p></div>
+      </div>
+      <div class="invoice-title">
+        <h2>INVOICE</h2>
+        <div class="meta"><strong>Invoice No:</strong> ${invoiceNumber(invoice)}<br><strong>Date:</strong> ${esc(new Date().toLocaleDateString('en-GB'))}</div>
+      </div>
+      <div class="customer">
+        <div class="customer-grid">
+          <div><div class="label">Bill To</div><div class="value">${esc(invoice.custName || 'Valued Customer')}</div></div>
+          <div><div class="label">Phone</div><div class="value">${esc(invoice.custPhone || 'N/A')}</div></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Item</th><th>H × W × D (ft)</th><th>Sq.ft</th><th>Rate / Sq.ft</th><th>Amount</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="totals">
+        <div class="total-row"><span>Subtotal</span><strong>${money(c.subtotal)}</strong></div>
+        ${c.discountPct > 0 ? `<div class="total-row"><span>Discount (${c.discountPct}%)</span><strong>- ${money(c.discountAmt)}</strong></div>` : ''}
+        <div class="total-row grand"><span>Grand Total</span><span>${money(c.grandTotal)}</span></div>
+      </div>
+      <div class="payment-box">
+        <h3>Payment Schedule</h3>
+        <table class="payment-table">
+          <thead><tr><th>Payment Stage</th><th>Percentage</th><th>Amount</th></tr></thead>
+          <tbody>
+            <tr><td>First Payment / Advance</td><td>10%</td><td>${money(c.grandTotal * 0.10)}</td></tr>
+            <tr><td>Second Payment</td><td>50%</td><td>${money(c.grandTotal * 0.50)}</td></tr>
+            <tr><td>Balance Payment</td><td>40%</td><td>${money(c.grandTotal * 0.40)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="footer">
+        <div><strong>Payment / Conditions</strong><br>Booking 5% · Second 40% · Third 40% · Glass Fitting 10% · End of Project 5%</div>
+        <div><strong>Contact</strong><br>${COMPANY.phone}<br>This invoice is generated from the saved estimate.</div>
+      </div>`;
+  }
+
+  async function imageData(url){
+    try{
+      const img = new Image();
+      img.src = url;
+      await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;});
+      const canvas=document.createElement('canvas'); canvas.width=img.naturalWidth; canvas.height=img.naturalHeight;
+      canvas.getContext('2d').drawImage(img,0,0);
+      return {data:canvas.toDataURL('image/jpeg'), width:img.naturalWidth, height:img.naturalHeight};
+    }catch(e){ return null; }
+  }
+
+  async function generateInvoicePDF(){
+    if(!invoice) return;
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF('p','mm','a4');
+    const c=calculations(invoice);
+    const brown=[93,58,32], gold=[224,196,150];
+    const logo=await imageData(COMPANY.logo);
+
+    doc.setFillColor(...brown); doc.rect(0,0,210,30,'F');
+    if(logo) doc.addImage(logo.data,'JPEG',10,4,22,22);
+    doc.setTextColor(255,255,255); doc.setFont('Helvetica','bold'); doc.setFontSize(18); doc.text(COMPANY.name,38,14);
+    doc.setFont('Helvetica','normal'); doc.setFontSize(9); doc.text(COMPANY.tagline,38,21);
+    doc.setFont('Helvetica','bold'); doc.setFontSize(20); doc.setTextColor(...brown); doc.text('INVOICE',14,42);
+    doc.setFont('Helvetica','normal'); doc.setFontSize(9); doc.setTextColor(0);
+    doc.text(`Invoice No: ${invoiceNumber(invoice)}`,196,39,{align:'right'});
+    doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`,196,45,{align:'right'});
+
+    doc.setDrawColor(210); doc.roundedRect(14,51,182,25,2,2,'S');
+    doc.setFont('Helvetica','bold'); doc.setFontSize(8); doc.setTextColor(100); doc.text('BILL TO',18,58);
+    doc.setFontSize(11); doc.setTextColor(0); doc.text(String(invoice.custName||'Valued Customer'),18,65);
+    doc.setFont('Helvetica','normal'); doc.setFontSize(9); doc.text(`Phone: ${invoice.custPhone||'N/A'}`,18,71);
+
+    let y=86;
+    const col=[16,86,130,151,181];
+    doc.setFillColor(...gold); doc.rect(14,y-6,182,9,'F');
+    doc.setFont('Helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...brown);
+    doc.text('Item',col[0],y); doc.text('H × W × D (ft)',col[1],y); doc.text('Sq.ft',col[2],y); doc.text('Rate',col[3],y); doc.text('Amount',196,y,{align:'right'});
+    y+=8;
+
+    const pageHeader=()=>{ doc.setFont('Helvetica','bold');doc.setFontSize(10);doc.setTextColor(...brown);doc.text(`${COMPANY.name} — Invoice (contd.)`,14,15); return 26; };
+    for(const [room,items] of Object.entries(c.groups)){
+      if(y>270){doc.addPage();y=pageHeader();}
+      doc.setFillColor(...gold);doc.rect(14,y-5,182,7,'F');doc.setFont('Helvetica','bold');doc.setFontSize(9);doc.setTextColor(...brown);doc.text(String(room).toUpperCase(),16,y);y+=9;
+      doc.setFont('Helvetica','normal');doc.setFontSize(8);doc.setTextColor(0);
+      items.forEach(item=>{
+        if(y>275){doc.addPage();y=pageHeader();}
+        const size=`${item.h} × ${item.w} × ${item.d||0}`;
+        doc.text(String(item.name||''),16,y,{maxWidth:65});
+        doc.text(size,86,y);doc.text(item.sqft.toFixed(1),130,y);doc.text(`Rs.${Number(item.rate||0).toLocaleString('en-IN')}`,151,y);doc.text(`Rs.${item.amount.toLocaleString('en-IN')}`,196,y,{align:'right'});y+=7;
+      });
+    }
+    if(y>250){doc.addPage();y=25;}
+    doc.setDrawColor(180);doc.line(14,y,196,y);y+=7;
+    doc.setFont('Helvetica','normal');doc.setFontSize(10);doc.text('Subtotal:',150,y);doc.text(`Rs.${c.subtotal.toLocaleString('en-IN')}`,196,y,{align:'right'});y+=7;
+    if(c.discountPct>0){doc.text(`Discount (${c.discountPct}%):`,150,y);doc.text(`- Rs.${c.discountAmt.toLocaleString('en-IN')}`,196,y,{align:'right'});y+=7;}
+    doc.setFont('Helvetica','bold');doc.setFontSize(13);doc.setTextColor(...brown);doc.text('Grand Total:',150,y);doc.text(`Rs.${c.grandTotal.toLocaleString('en-IN')}`,196,y,{align:'right'});
+
+    y += 12;
+    if(y > 245){ doc.addPage(); y = 25; }
+    doc.setFont('Helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...brown); doc.text('Payment Schedule',14,y); y += 6;
+    doc.setFont('Helvetica','bold'); doc.setFontSize(8); doc.setTextColor(0);
+    doc.setFillColor(244,238,230); doc.rect(14,y-5,182,8,'F');
+    doc.text('Payment Stage',18,y); doc.text('Percentage',110,y); doc.text('Amount',196,y,{align:'right'}); y += 7;
+    const payments = [
+      ['First Payment / Advance','10%',c.grandTotal*0.10],
+      ['Second Payment','50%',c.grandTotal*0.50],
+      ['Balance Payment','40%',c.grandTotal*0.40]
+    ];
+    doc.setFont('Helvetica','normal'); doc.setFontSize(8);
+    payments.forEach(([stage,pct,amount])=>{
+      doc.text(stage,18,y); doc.text(pct,110,y); doc.text(`Rs.${Math.round(amount).toLocaleString('en-IN')}`,196,y,{align:'right'});
+      doc.setDrawColor(220); doc.line(14,y+2,196,y+2); y += 7;
+    });
+
+    doc.setFont('Helvetica','normal');doc.setFontSize(8);doc.setTextColor(100);doc.text(`Contact: ${COMPANY.phone}`,14,288);doc.text('Generated from saved estimate',196,288,{align:'right'});
+    doc.save(`Kiran_Interior_Invoice_${String(invoice.custName||'Customer').replace(/[^a-z0-9]+/gi,'_')}.pdf`);
+  }
+
+  render();
+  document.getElementById('downloadInvoiceBtn').addEventListener('click',generateInvoicePDF);
+})();
+</script>
+</body>
+</html>

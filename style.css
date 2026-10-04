@@ -45,6 +45,11 @@
   }
   nav button:hover{opacity:.95;}
   nav button.active{opacity:1; border-bottom-color:var(--brass);}
+  .nav-link{
+    font-size:.85rem; font-weight:500; color:var(--brass-light);
+    padding:11px 16px; text-decoration:none; border-left:1px solid rgba(231,207,162,.3); margin-left:6px;
+  }
+  .nav-link:hover{color:#fff;}
   .hamburger{display:none; background:none; border:1px solid var(--brass-light); color:var(--paper); padding:8px 12px; cursor:pointer;}
   @media (max-width:720px){
     nav{display:none; position:absolute; top:100%; left:0; right:0; background:var(--ink); flex-direction:column; border-bottom:1px solid var(--brass);}
@@ -126,8 +131,42 @@
   th,td{text-align:left; padding:10px 8px; font-size:.87rem; border-bottom:1px solid var(--line);}
   th{color:#8f8168; font-weight:600; font-size:.7rem; letter-spacing:.04em; text-transform:uppercase;}
   tfoot td{font-weight:700; border-top:2px solid var(--ink); border-bottom:none; font-size:1rem; color:var(--walnut-dark);}
+  tfoot tr:not(.grand-row) td{border-top:none; font-weight:500; font-size:.85rem; color:#5b5142;}
+  tfoot tr:first-child td{border-top:1px solid var(--line);}
+  tfoot .subtotal-label{text-align:right; padding-right:14px;}
+  tfoot .grand-row td{border-top:2px solid var(--ink); font-size:1.05rem; color:var(--walnut-dark);}
+  tfoot .grand-row td:nth-last-child(2){text-align:right; padding-right:14px;}
+
+  tr.room-group-header td{
+    background:var(--brass-light); color:var(--walnut-dark); font-weight:700;
+    font-size:.82rem; text-transform:uppercase; letter-spacing:.03em; padding:8px;
+  }
+  tr.room-group-subtotal td{
+    background:#faf5ea; font-weight:600; font-size:.83rem; color:#5b5142; border-bottom:2px solid var(--line);
+  }
+  tr.room-group-subtotal td:first-child{text-align:right;}
   .note{font-size:.79rem; color:#8f8168; margin-top:10px; line-height:1.5;}
   .row-actions{display:flex; justify-content:space-between; align-items:center; margin-top:20px; flex-wrap:wrap; gap:12px;}
+  .discount-row{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    margin-top:14px; padding:12px 14px; background:#faf5ea; border:1px solid var(--line); border-radius:var(--radius);
+  }
+  .discount-controls{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .discount-controls input{width:70px; padding:7px 8px; display:inline-block;}
+  .pct-sign{font-size:.9rem; color:#5b5142;}
+  .discount-chips{display:flex; gap:6px; flex-wrap:wrap;}
+  button.chip{
+    background:#fff; border:1px solid var(--line); color:var(--ink);
+    padding:5px 11px; font-size:.78rem; cursor:pointer; border-radius:20px; font-family:inherit;
+  }
+  button.chip:hover{border-color:var(--walnut);}
+  button.chip.active{background:var(--walnut); color:#fff; border-color:var(--walnut);}
+
+  .editing-banner{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    background:#fff3d6; border:1px solid var(--brass); color:var(--walnut-dark);
+    padding:10px 16px; border-radius:var(--radius); font-size:.86rem; font-weight:600; margin-bottom:22px;
+  }
 
   /* ---------- Admin ---------- */
   .gate{max-width:360px; margin:70px auto; text-align:center;}
@@ -155,3 +194,20 @@
   }
   .contact-strip a{color:#fff; font-weight:700; text-decoration:none; border-bottom:1px solid rgba(255,255,255,.5);}
   .hint{font-size:.72rem; color:#8f8168; margin-top:4px;}
+
+  .est-row{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;
+    padding:14px 4px; border-bottom:1px solid var(--line); font-size:.86rem;
+  }
+  .est-row:last-child{border-bottom:none;}
+  .est-info{display:flex; flex-direction:column; gap:3px;}
+  .est-name{font-weight:600; color:var(--ink);}
+  .est-meta{font-size:.76rem; color:#8f8168;}
+  .est-badge{
+    display:inline-block; font-size:.68rem; font-weight:700; letter-spacing:.03em; text-transform:uppercase;
+    padding:2px 8px; border-radius:20px; margin-left:8px; vertical-align:middle;
+  }
+  .est-badge.original{background:#e7f0e5; color:var(--moss);}
+  .est-badge.revision{background:#fff3d6; color:var(--walnut-dark);}
+  .est-total{font-weight:700; color:var(--walnut-dark); white-space:nowrap;}
+  .est-actions{display:flex; gap:6px; flex-wrap:wrap;}
